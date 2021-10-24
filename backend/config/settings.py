@@ -41,7 +41,9 @@ INSTALLED_APPS = [
     'accounts.apps.AccountsConfig',
     'history.apps.HistoryConfig',
     # 3rd party
-    'rest_framework'
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'djoser',
 ]
 
 MIDDLEWARE = [
@@ -130,3 +132,20 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+DJOSER = {
+    'SEND_CONFIRMATION_EMAIL': True,
+    'SEND_ACTIVATION_EMAIL': True,
+    'ACTIVATION_URL':'users/activate/{uid}/{token}/'
+}
+SIMPLE_JWT = {
+   'AUTH_HEADER_TYPES': ('JWT',),
+   
+}
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
