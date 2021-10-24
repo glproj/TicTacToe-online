@@ -15,10 +15,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from history.views import GameViewSet
+from rest_framework import routers
+
+router = routers.DefaultRouter()
+router.register('games', GameViewSet)
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # path('api/v1/history/', include('history.urls')),
+    path('api/v1/', include(router.urls)),
     path("api/v1/auth/", include('djoser.urls')),
     path("api/v1/auth/", include('djoser.urls.jwt'))
 ]
