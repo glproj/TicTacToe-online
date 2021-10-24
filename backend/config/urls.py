@@ -15,14 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from accounts.views import CustomUserViewSet
-from rest_framework.routers import SimpleRouter
-
-router = SimpleRouter()
-router.register('accounts', CustomUserViewSet)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
     # path('api/v1/history/', include('history.urls')),
-    path('api/v1/', include(router.urls))
+    path("api/v1/auth/", include('djoser.urls')),
+    path("api/v1/auth/", include('djoser.urls.jwt'))
 ]
