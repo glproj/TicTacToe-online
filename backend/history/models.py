@@ -6,10 +6,10 @@ User = get_user_model()
 class Game(models.Model):
     played_by = models.ManyToManyField(User)
     winner = models.ForeignKey(
-        get_user_model(), on_delete=models.SET_NULL, null=True, related_name="winner"
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="winner"
     )
     loser = models.ForeignKey(
-        get_user_model(), on_delete=models.SET_NULL, null=True, related_name="loser"
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="loser"
     )
     started = models.DateTimeField()
     finished = models.DateTimeField(auto_now_add=True)
