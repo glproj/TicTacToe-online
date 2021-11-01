@@ -19,7 +19,7 @@ from history.views import GameViewSet
 from rest_framework import routers
 
 router = routers.DefaultRouter()
-router.register('games', GameViewSet)
+router.register('games', GameViewSet, 'game')
 
 urlpatterns = [
     path("admin/", admin.site.urls),
