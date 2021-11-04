@@ -9,6 +9,7 @@ djangorestframework = "*"
 djangorestframework-simplejwt = "*"
 djoser = "*"
 channels = "*"
+pytz = "*"
 
 [dev-packages]
 black = "*"
