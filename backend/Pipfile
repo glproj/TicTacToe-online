@@ -10,6 +10,7 @@ djangorestframework-simplejwt = "*"
 djoser = "*"
 channels = "*"
 pytz = "*"
+channels-redis = "*"
 
 [dev-packages]
 black = "*"
