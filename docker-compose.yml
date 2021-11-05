@@ -7,4 +7,10 @@ services:
       - ./backend:/backend
     ports:
       - 8000:8000
-  
+    depends_on:
+      - "redis"
+  redis:
+    image: redis
+    command: redis-server --requirepass "$REDIS_PASSWORD"
+    ports:
+      - "6379:6379"
