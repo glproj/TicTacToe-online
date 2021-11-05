@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     #local
     'accounts.apps.AccountsConfig',
     'history.apps.HistoryConfig',
+    'accounts',
+    'history',
+    'room',
     # 3rd party
     'rest_framework',
     'rest_framework_simplejwt',
