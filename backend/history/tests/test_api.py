@@ -82,7 +82,39 @@ class GameApiTestCase(APITestCase):
         )
 
     def test_detail_of_normal_game(self):
-        pass
+        game_detail_url = reverse("game-detail", args=[1])
+        response = self.client.get(game_detail_url)
+        self.assertEqual(
+            response.data,
+            {
+                "played_by": ["example1", "example2"],
+                "winner": "example1",
+                "loser": "example2",
+                "started": (self.setup_datetime - timedelta(minutes=2)).strftime(
+                    self.serializer_datetime_format
+                ),
+                "finished": self.setup_datetime.strftime(
+                    self.serializer_datetime_format
+                ),
+                "moves": "x3571986",
+            },
+        )
 
     def test_detail_of_tie_game(self):
-        pass
+        game_detail_url = reverse("game-detail", args=[2])
+        response = self.client.get(game_detail_url)
+        self.assertEqual(
+            response.data,
+            {
+                "played_by": ["example1", "example2"],
+                "winner": None,
+                "loser": None,
+                "started": (self.setup_datetime - timedelta(minutes=5)).strftime(
+                    self.serializer_datetime_format
+                ),
+                "finished": (self.setup_datetime - timedelta(minutes=3)).strftime(
+                    self.serializer_datetime_format
+                ),
+                "moves": "o215368794",
+            },
+        )
