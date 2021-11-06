@@ -11,6 +11,7 @@ djoser = "*"
 channels = "*"
 pytz = "*"
 channels-redis = "*"
+debugpy = "*"
 
 [dev-packages]
 black = "*"
