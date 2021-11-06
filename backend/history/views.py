@@ -17,7 +17,7 @@ class GameViewSet(viewsets.ReadOnlyModelViewSet):
                 user = User.objects.get(username=username)
             except User.DoesNotExist:
                 return Response(status.HTTP_400_BAD_REQUEST)
-            games = user.winner.all() | user.loser.all()
+            games = user.game_set.all()
             return games.order_by('-started')
         return Game.objects.all()
         
