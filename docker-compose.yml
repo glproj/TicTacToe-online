@@ -8,9 +8,16 @@ services:
     ports:
       - 8000:8000
     depends_on:
-      - "redis"
+      - redis
+      - db
   redis:
     image: redis
     command: redis-server --requirepass "$REDIS_PASSWORD"
     ports:
       - "6379:6379"
+  db:
+    image: postgres:14.0
+    volumes:
+      - ./backend/data/db:/var/lib/posgresql/data
+    environment:
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD

@@ -12,9 +12,11 @@ channels = "*"
 pytz = "*"
 channels-redis = "*"
 debugpy = "*"
+psycopg2 = "*"
 
 [dev-packages]
 black = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.9"
