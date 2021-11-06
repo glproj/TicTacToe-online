@@ -1,6 +1,7 @@
 from rest_framework.test import APITestCase
 from django.contrib.auth import get_user_model
 from history.models import Game
+from history.serializers import GameSerializer
 from datetime import datetime, timedelta
 from django.urls import reverse
 import collections
@@ -59,87 +60,32 @@ class GameApiTestCase(APITestCase):
     def test_listing_games(self):
         game_list_url = reverse("game-list")
         response = self.client.get(game_list_url)
-        expected_value = [
-            collections.OrderedDict(
-                {
-                    "played_by": ["example1", "example2"],
-                    "winner": "example1",
-                    "loser": "example2",
-                    "started": (self.setup_datetime - timedelta(minutes=2)).strftime(
-                        self.serializer_datetime_format
-                    ),
-                    "finished": self.setup_datetime.strftime(
-                        self.serializer_datetime_format
-                    ),
-                    "moves": "x3571986",
-                }
-            ),
-            collections.OrderedDict(
-                {
-                    "played_by": ["example2", "example3"],
-                    "winner": "example3",
-                    "loser": "example2",
-                    "started": (self.setup_datetime - timedelta(minutes=10)).strftime(
-                        self.serializer_datetime_format
-                    ),
-                    "finished": (self.setup_datetime - timedelta(minutes=7)).strftime(
-                        self.serializer_datetime_format
-                    ),
-                    "moves": "x3571986",
-                }
-            ),
-            collections.OrderedDict(
-                {
-                    "played_by": ["example1", "example2"],
-                    "winner": None,
-                    "loser": None,
-                    "started": (self.setup_datetime - timedelta(minutes=5)).strftime(
-                        self.serializer_datetime_format
-                    ),
-                    "finished": (self.setup_datetime - timedelta(minutes=3)).strftime(
-                        self.serializer_datetime_format
-                    ),
-                    "moves": "o215368794",
-                }
-            ),
-        ]
-        for i in expected_value:
-            self.assertEqual(i, response.data[expected_value.index(i)])
+        all_games = Game.objects.all()
+        all_games_serialized = GameSerializer(all_games, many=True)
+        self.assertEqual(response.data, all_games_serialized.data)
 
     def test_detail_of_normal_game(self):
         game_detail_url = reverse("game-detail", args=[1])
         response = self.client.get(game_detail_url)
+        game = Game.objects.get(id=1)
+        game_serialized = GameSerializer(game)
         self.assertEqual(
             response.data,
-            {
-                "played_by": ["example1", "example2"],
-                "winner": "example1",
-                "loser": "example2",
-                "started": (self.setup_datetime - timedelta(minutes=2)).strftime(
-                    self.serializer_datetime_format
-                ),
-                "finished": self.setup_datetime.strftime(
-                    self.serializer_datetime_format
-                ),
-                "moves": "x3571986",
-            },
+            game_serialized.data
         )
 
     def test_detail_of_tie_game(self):
         game_detail_url = reverse("game-detail", args=[3])
         response = self.client.get(game_detail_url)
+        game = Game.objects.get(id=3)
+        game_serialized = GameSerializer(game)
         self.assertEqual(
             response.data,
-            {
-                "played_by": ["example1", "example2"],
-                "winner": None,
-                "loser": None,
-                "started": (self.setup_datetime - timedelta(minutes=5)).strftime(
-                    self.serializer_datetime_format
-                ),
-                "finished": (self.setup_datetime - timedelta(minutes=3)).strftime(
-                    self.serializer_datetime_format
-                ),
-                "moves": "o215368794",
-            },
+            game_serialized.data
         )
+
+    def test_get_all_games_of_an_user(self):
+        game_list_url = reverse("game-list") + "?user=example1"
+        response = self.client.get(game_list_url)
+        # expected_value = 
+
