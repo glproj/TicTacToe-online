@@ -85,7 +85,10 @@ class GameApiTestCase(APITestCase):
         )
 
     def test_get_all_games_of_an_user(self):
+        example1 = User.objects.all()[0]
         game_list_url = reverse("game-list") + "?user=example1"
         response = self.client.get(game_list_url)
-        # expected_value = 
+        example1_games = example1.game_set.all()
+        example1_games_serialized = GameSerializer(example1_games, many=True)
+        self.assertEqual(response.data, example1_games_serialized.data)
 
