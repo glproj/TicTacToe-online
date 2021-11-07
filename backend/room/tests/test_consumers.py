@@ -1,8 +1,3 @@
-import asyncio
-from datetime import datetime
-from asgiref.sync import sync_to_async
-from django.test import TestCase
-from room.consumers import RoomConsumer
 from channels.testing import WebsocketCommunicator
 from config.asgi import application
 from room.models import Room
