@@ -33,8 +33,8 @@ class GameApiTestCase(APITestCase):
         )
 
         game.save()
-        game1.save()
         game_tie.save()
+        game1.save()
 
         game.played_by.set([user1, user2])
         game.winner = user1
@@ -65,9 +65,9 @@ class GameApiTestCase(APITestCase):
         self.assertEqual(response.data, all_games_serialized.data)
 
     def test_detail_of_normal_game(self):
-        game_detail_url = reverse("game-detail", args=[1])
+        game = Game.objects.all()[0]
+        game_detail_url = reverse("game-detail", args=[game.pk])
         response = self.client.get(game_detail_url)
-        game = Game.objects.get(id=1)
         game_serialized = GameSerializer(game)
         self.assertEqual(
             response.data,
@@ -75,9 +75,9 @@ class GameApiTestCase(APITestCase):
         )
 
     def test_detail_of_tie_game(self):
-        game_detail_url = reverse("game-detail", args=[3])
+        game = Game.objects.get(winner=None)
+        game_detail_url = reverse("game-detail", args=[game.pk])
         response = self.client.get(game_detail_url)
-        game = Game.objects.get(id=3)
         game_serialized = GameSerializer(game)
         self.assertEqual(
             response.data,
