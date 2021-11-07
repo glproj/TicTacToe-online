@@ -13,6 +13,9 @@ pytz = "*"
 channels-redis = "*"
 debugpy = "*"
 psycopg2 = "*"
+pytest = "*"
+pytest-django = "*"
+pytest-asyncio = "*"
 
 [dev-packages]
 black = "*"
