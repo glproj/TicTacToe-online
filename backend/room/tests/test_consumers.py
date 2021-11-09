@@ -1,12 +1,34 @@
-from channels.testing import WebsocketCommunicator
-from config.asgi import application
+from asgiref.sync import sync_to_async
+from channels.testing.websocket import WebsocketCommunicator
 from room.models import Room
+from django.contrib.auth import get_user_model
 import pytest
+from config.asgi import application
+from rest_framework.test import APIClient
 
 
 
+@pytest.mark.django_db
 class TestRoomConsumer:
-    @pytest.mark.django_db
+    async def simulate_game(self, player1, player2, moves):
+        """Simulate a game where player1 starts and returns
+        the message received from both players when the game ends
+
+        :param player1: player that goes first
+        :type player1: WebsocketsCommunicator
+        :param player2: player that goes second
+        :type player2: WebsocketsCommunicator
+        :param moves: game moves, like '1234567' (player1 wins in this example)
+        :type moves: string
+        """
+        playing = player1
+        for position in moves:
+            await playing.send_json_to({"position": position})
+            player1_response = await player1.receive_json_from()
+            player2_response = await player2.receive_json_from()
+            playing = player2 if playing == player1 else player1
+        return player1_response, player2_response
+
     @pytest.mark.asyncio
     async def test_sending_position(self, connect_players):
         """Checks if player2 can receive positions correctly"""
