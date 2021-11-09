@@ -3,6 +3,9 @@ import json
 from channels.generic.websocket import JsonWebsocketConsumer
 from .models import Room
 from asgiref.sync import async_to_sync
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 winning_positions = [
     "123",
@@ -22,19 +25,19 @@ class RoomConsumer(JsonWebsocketConsumer):
         self.room_group_name = "game_" + self.room_name
         try:
             room = Room.objects.get(name=self.room_name)
-            player_number = room.nb_of_players
-            if player_number == 2:
-                self.close("room_full")
-            else:
-                room.nb_of_players += 1
-                room.save()
-                async_to_sync(self.channel_layer.group_add)(
-                    self.room_group_name, self.channel_name
-                )
-
-                self.accept()
+            room.nb_of_players += 1
         except Room.DoesNotExist:
             room = Room.objects.create(name=self.room_name, nb_of_players=1)
+        player_number = room.nb_of_players
+        if player_number == 3:
+            print('a')
+            self.close("room_full")
+        else:
+            user = self.scope['user']
+            if self.scope['user'].id == None:
+                user = User.objects.get(username='anonymous')
+            room.players.add(user)
+            room.save()
             async_to_sync(self.channel_layer.group_add)(
                 self.room_group_name, self.channel_name
             )
