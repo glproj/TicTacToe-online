@@ -30,12 +30,11 @@ class RoomConsumer(JsonWebsocketConsumer):
             room = Room.objects.create(name=self.room_name, nb_of_players=1)
         player_number = room.nb_of_players
         if player_number == 3:
-            print('a')
             self.close("room_full")
         else:
-            user = self.scope['user']
-            if self.scope['user'].id == None:
-                user = User.objects.get(username='anonymous')
+            user = self.scope["user"]
+            if self.scope["user"].id == None:
+                user = User.objects.get(username="anonymous")
             room.players.add(user)
             room.save()
             async_to_sync(self.channel_layer.group_add)(
@@ -59,6 +58,8 @@ class RoomConsumer(JsonWebsocketConsumer):
     def receive(self, text_data):
         data_json = json.loads(text_data)
         position = data_json["position"]
+        if not (len(position) == 1 and position in "123456789"):
+            return self.send_json({"error": "invalid position"})
         async_to_sync(self.channel_layer.group_send)(
             self.room_group_name, {"type": "position_played", "position": position}
         )
