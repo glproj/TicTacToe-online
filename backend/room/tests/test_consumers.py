@@ -1,11 +1,9 @@
 from asgiref.sync import sync_to_async
 from channels.testing.websocket import WebsocketCommunicator
 from room.models import Room
-from django.contrib.auth import get_user_model
 import pytest
 from config.asgi import application
 from rest_framework.test import APIClient
-
 
 
 @pytest.mark.django_db
@@ -33,9 +31,9 @@ class TestRoomConsumer:
     async def test_sending_position(self, connect_players):
         """Checks if player2 can receive positions correctly"""
         player1, player2 = connect_players
-        await player1.send_json_to({"type": "position_played", "position": 1})
+        await player1.send_json_to({"type": "position_played", "position": "1"})
         position_received = await player2.receive_json_from()
-        assert {'position': 1} == position_received
+        assert {"position": "1"} == position_received
 
     @pytest.mark.django_db
     @pytest.mark.asyncio
