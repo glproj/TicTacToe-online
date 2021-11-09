@@ -13,7 +13,7 @@ class RoomConsumer(WebsocketConsumer):
             room = Room.objects.get(name=self.room_name)
             player_number = room.nb_of_players
             if player_number == 2:
-                self.close()
+                self.close("room_full")
             else:
                 room.nb_of_players += 1
                 room.save()
@@ -31,14 +31,16 @@ class RoomConsumer(WebsocketConsumer):
             self.accept()
 
     def disconnect(self, close_code):
-        async_to_sync(self.channel_layer.group_discard)(
-            self.room_group_name, self.channel_name
+        if close_code == "room_full":
+            return
+        async_to_sync(self.channel_layer.group_send)(
+            self.room_group_name, {"type": "close"}
         )
-        room = Room.objects.get(name=self.room_name)
-        player_number = room.nb_of_players
-        # if player_number == 2:
-        #     return
-        room.delete()
+        try:
+            room = Room.objects.get(name=self.room_name)
+            room.delete()
+        except Room.DoesNotExist:
+            return
 
     def receive(self, text_data):
         data_json = json.loads(text_data)
