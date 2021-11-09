@@ -35,11 +35,41 @@ class TestRoomConsumer:
         position_received = await player2.receive_json_from()
         assert {"position": "1"} == position_received
 
-    @pytest.mark.django_db
-    @pytest.mark.asyncio
     def test_room_generated_by_lobby(self, connect_players):
         """Checks if Room is generated correctly after players connect"""
         room_queryset = Room.objects.all()
         assert room_queryset.count() == 1
         assert room_queryset[0].name == "lobby"
         assert room_queryset[0].nb_of_players == 2
+
+    @pytest.mark.asyncio
+    async def test_room_is_deleted_after_player_quits(self, connect_players):
+        """Disconnects a player and checks if the room is deleted"""
+        player1 = connect_players[0]
+        await player1.disconnect()
+        room_queryset_length = await sync_to_async(Room.objects.all().count)()
+        assert room_queryset_length == 0
+
+    @pytest.mark.asyncio
+    async def test_player_connects_to_full_room(self, connect_players):
+        """Connects a player to a full room"""
+        player3 = WebsocketCommunicator(application, "ws/game/lobby/")
+        connected, subprotocol = await player3.connect()
+        assert not connected
+
+    @pytest.mark.parametrize("moves", ["1234567", "123456879", "314589"])
+    @pytest.mark.asyncio
+    async def test_message_after_game_end(self, connect_players, moves):
+        player1, player2 = connect_players
+        player1_response, player2_response = await self.simulate_game(
+            player1, player2, moves
+        )
+        if moves == "123456789":
+            assert player1_response == {"result": "draw", "position": "9"}
+            assert player2_response == {"result": "draw", "position": "9"}
+        elif moves == "1234567":
+            assert player1_response == {"result": "player1_win", "position": "7"}
+            assert player2_response == {"result": "player1_win", "position": "7"}
+        elif moves == "314589":
+            assert player1_response == {"result": "player2_win", "position": "9"}
+            assert player2_response == {"result": "player2_win", "position": "9"}
