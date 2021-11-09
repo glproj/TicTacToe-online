@@ -83,3 +83,10 @@ class TestRoomConsumer:
             User.objects.get(username="example1"),
             User.objects.get(username="example2"),
         ]
+
+    @pytest.mark.parametrize("position", ["10", "fjkdsalç", "0"])
+    @pytest.mark.asyncio
+    async def test_sending_invalid_positions(self, connect_players, position):
+        player1, player2 = connect_players
+        await player1.send_json_to({"type": "position_played", "position": position})
+        assert await player1.receive_json_from() == {"error": "invalid position"}
