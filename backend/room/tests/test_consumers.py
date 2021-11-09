@@ -4,6 +4,9 @@ from room.models import Room
 import pytest
 from config.asgi import application
 from rest_framework.test import APIClient
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 
 @pytest.mark.django_db
@@ -73,3 +76,10 @@ class TestRoomConsumer:
         elif moves == "314589":
             assert player1_response == {"result": "player2_win", "position": "9"}
             assert player2_response == {"result": "player2_win", "position": "9"}
+
+    def test_user_added_to_players_field_after_connection(self, connect_players):
+        room = Room.objects.all()[0]
+        assert list(room.players.all()) == [
+            User.objects.get(username="example1"),
+            User.objects.get(username="example2"),
+        ]
