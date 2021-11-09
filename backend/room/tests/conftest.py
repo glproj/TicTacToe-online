@@ -46,8 +46,15 @@ async def connect_players(create_users_and_tokens, db):
     Connects player1 and player2 to the lobby room.
     After the test is run, it disconnects the players.
     """
-    player1 = WebsocketCommunicator(application, "ws/game/lobby/")
-    player2 = WebsocketCommunicator(application, "ws/game/lobby/")
+    players_tokens = create_users_and_tokens
+    player1 = WebsocketCommunicator(
+        application,
+        "ws/game/lobby/?token=" + players_tokens[0],
+    )
+    player2 = WebsocketCommunicator(
+        application,
+        "ws/game/lobby/?token=" + players_tokens[1],
+    )
     await player1.connect()
     await player2.connect()
     yield (player1, player2)
