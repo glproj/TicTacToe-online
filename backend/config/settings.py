@@ -156,7 +156,8 @@ DJOSER = {
 }
 SIMPLE_JWT = {
    'AUTH_HEADER_TYPES': ('JWT',),
-   
+   'ALGORITHM': 'HS256',
+   'USER_ID_CLAIM': 'user_id'
 }
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
