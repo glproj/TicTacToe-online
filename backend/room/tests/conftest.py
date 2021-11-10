@@ -66,3 +66,13 @@ async def connect_players(create_users_and_tokens, db):
     yield (player1, player2)
     await player1.disconnect()
     await player2.disconnect()
+
+@pytest.fixture
+async def connect_players_without_auth(create_users_and_tokens, db):    
+    player1 = WebsocketCommunicator(application, "ws/game/lobby/")
+    player2 = WebsocketCommunicator(application, "ws/game/lobby/")
+    await player1.connect()
+    await player2.connect()
+    yield (player1, player2)
+    await player1.disconnect()
+    await player2.disconnect()
