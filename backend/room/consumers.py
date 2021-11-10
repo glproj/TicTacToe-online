@@ -37,8 +37,11 @@ class RoomConsumer(JsonWebsocketConsumer):
         else:
             user = self.scope["user"]
             if self.scope["user"].id == None:
-                user = User.objects.get(username="anonymous")
+                user = User.objects.get(username="anonymous1")
+                if user in room.players.all():
+                    user = User.objects.get(username="anonymous2")
             room.players.add(user)
+            self.players = room.players.all()
             room.save()
             async_to_sync(self.channel_layer.group_add)(
                 self.room_group_name, self.channel_name
