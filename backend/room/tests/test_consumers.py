@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 class TestRoomConsumer:
     async def simulate_game(self, player1, player2, moves):
         """Simulate a game where player1 starts and returns

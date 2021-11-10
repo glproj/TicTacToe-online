@@ -7,7 +7,7 @@ from config.asgi import application
 User = get_user_model()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def create_users_and_tokens(django_db_setup, django_db_blocker):
     with django_db_blocker.unblock():
         anonymous = User.objects.create_user(
