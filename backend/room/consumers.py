@@ -1,9 +1,10 @@
-# chat/consumers.py
+from django.utils import timezone
 import json
 from channels.generic.websocket import JsonWebsocketConsumer
 from .models import Room
 from asgiref.sync import async_to_sync
 from django.contrib.auth import get_user_model
+from history.models import Game
 
 User = get_user_model()
 
@@ -63,9 +64,66 @@ class RoomConsumer(JsonWebsocketConsumer):
 
     def receive(self, text_data):
         data_json = json.loads(text_data)
-        position = data_json["position"]
+        position = str(data_json["position"])
         if not (len(position) == 1 and position in "123456789"):
             return self.send_json({"error": "invalid position"})
+        try:
+            self.played
+        except AttributeError:
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name, {"type": "position_played", "position": position}
+            )
+            return
+        # I'm not modifying self.played here because it is
+        # already modified in the position_played method.
+        played = self.played + position
+
+        current_player = 1 if len(played) % 2 == 1 else 2
+        if self.player != current_player:
+            return self.send_json({'error': 'not your turn'})
+        played_by_current_player = ""
+        # this block will pick only the moves
+        # of the player that made the last move
+        for i in range(len(played)):
+            if i % 2 != len(played) % 2:
+                played_by_current_player += played[i]
+        for win in winning_positions:
+            if set(win).issubset(set(played_by_current_player)):
+                game = Game.objects.create(
+                    winner=self.players[current_player - 1],
+                    loser=self.players[0 if current_player == 2 else 1],
+                    started=self.started
+                    # finish have auto_add_now set to True
+                )
+                game.played_by.set(self.players)
+                game.save()
+                async_to_sync(self.channel_layer.group_send)(
+                    self.room_group_name,
+                    {
+                        "type": "position_played",
+                        "position": position,
+                        "result": f"player{current_player}_win",
+                    },
+                )
+                return
+            elif len(played) == 9:
+                game = Game.objects.create(
+                    winner=None,
+                    loser=None,
+                    started=self.started
+                    # finish have auto_add_now set to True
+                )
+                game.played_by.set(self.players)
+                game.save()
+                async_to_sync(self.channel_layer.group_send)(
+                    self.room_group_name,
+                    {
+                        "type": "position_played",
+                        "position": position,
+                        "result": "draw",
+                    },
+                )
+                return
         async_to_sync(self.channel_layer.group_send)(
             self.room_group_name, {"type": "position_played", "position": position}
         )
@@ -75,30 +133,9 @@ class RoomConsumer(JsonWebsocketConsumer):
             self.played += event["position"]
         except AttributeError:
             self.played = event["position"]
-
-        current_player = 1 if len(played) % 2 == 1 else 2
-        if self.player != current_player:
-            return self.send_json({'error': 'not your turn'})
-        played_by_current_player = ""
-        # this block will pick only the moves
-        # of the player that made the last move
-        for i in range(len(self.played)):
-            if i % 2 != len(self.played) % 2:
-                played_by_current_player += self.played[i]
-
-        for win in winning_positions:
-            if set(win).issubset(set(played_by_current_player)):
-                self.send_json(
-                    {
-                        "position": event["position"],
-                        "result": f"player{current_player}_win",
-                    }
-                )
-            elif len(self.played) == 9:
-                self.send_json(
-                    {
-                        "position": event["position"],
-                        "result": "draw",
-                    }
-                )
-        self.send_json({"position": event["position"]})
+            self.started = timezone.now()
+        try:
+            send = {"position": event["position"], "result": event["result"]}
+        except KeyError:
+            send = {"position": event["position"]}
+        self.send_json(send)
