@@ -1,16 +1,25 @@
+from datetime import datetime
+from channels.db import database_sync_to_async as db_sync
 from asgiref.sync import sync_to_async
 from channels.testing.websocket import WebsocketCommunicator
+from django.utils import timezone
+import pytz
 from room.models import Room
 import pytest
 from config.asgi import application
-from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
+from history.models import Game
+from freezegun import freeze_time
 
 User = get_user_model()
 
 
 @pytest.mark.django_db(transaction=True)
 class TestRoomConsumer:
+    @db_sync
+    def get_user(self, username):
+        return User.objects.get(username=username)
+
     async def simulate_game(self, player1, player2, moves):
         """Simulate a game where player1 starts and returns
         the message received from both players when the game ends.
@@ -95,3 +104,85 @@ class TestRoomConsumer:
         player1, player2 = connect_players
         await player1.send_json_to({"type": "position_played", "position": position})
         assert await player1.receive_json_from() == {"error": "invalid position"}
+
+    @pytest.mark.asyncio
+    async def test_sending_positions_out_of_your_turn(self, connect_players):
+        player1, player2 = connect_players
+        await player1.send_json_to({"type": "position_played", "position": 1})
+        await player1.receive_json_from()
+        await player2.receive_json_from()
+        await player1.send_json_to({"type": "position_played", "position": 2})
+        assert await player1.receive_json_from() == {"error": "not your turn"}
+
+        await player1.send_json_to({"type": "position_played", "position": 3})
+        assert await player1.receive_json_from() == {"error": "not your turn"}
+
+        await player2.send_json_to({"type": "position_played", "position": 2})
+        await player2.receive_json_from()
+        await player2.send_json_to({"type": "position_played", "position": 3})
+        assert await player2.receive_json_from() == {"error": "not your turn"}
+
+        await player2.send_json_to({"type": "position_played", "position": 4})
+        assert await player2.receive_json_from() == {"error": "not your turn"}
+
+    @pytest.mark.parametrize("moves", ["1234567", "123456879"])
+    @pytest.mark.asyncio
+    async def test_game_instance_created_after_game_ends(self, connect_players, moves):
+        player1, player2 = connect_players
+        await self.simulate_game(player1, player2, moves)
+
+        @db_sync
+        def first_game():
+            return Game.objects.all()[0]
+
+        game = await first_game()
+        assert await db_sync(Game.objects.count)() == 1
+
+        p1_user = await self.get_user("example1")
+        p2_user = await self.get_user("example2")
+        if moves == "1234567":
+            assert await db_sync(lambda: game.winner)() == p1_user
+            assert await db_sync(lambda: game.loser)() == p2_user
+        else:
+            assert game.winner == None
+            assert game.loser == None
+        played_by = await db_sync(lambda: list(game.played_by.all()))()
+        assert played_by == [p1_user, p2_user]
+        assert game.started == timezone.datetime(
+            2007, 7, 7, 7, 7, 7, 7, tzinfo=pytz.utc
+        )
+        assert game.finished == timezone.datetime(
+            2007, 7, 7, 7, 12, 7, 7, tzinfo=pytz.utc
+        )
+
+    @pytest.mark.parametrize("moves", ["1234567", "123456879"])
+    @pytest.mark.asyncio
+    async def test_game_instance_created_after_game_ends_without_auth(
+        self, connect_players_without_auth, moves
+    ):
+        player1, player2 = connect_players_without_auth
+        await self.simulate_game(player1, player2, moves)
+
+        @db_sync
+        def first_game():
+            return Game.objects.all()[0]
+
+        game = await first_game()
+        assert await db_sync(Game.objects.count)() == 1
+
+        p1_user = await self.get_user("anonymous1")
+        p2_user = await self.get_user("anonymous2")
+        if moves == "1234567":
+            assert await db_sync(lambda: game.winner)() == p1_user
+            assert await db_sync(lambda: game.loser)() == p2_user
+        else:
+            assert game.winner == None
+            assert game.loser == None
+        played_by = await db_sync(lambda: list(game.played_by.all()))()
+        assert played_by == [p1_user, p2_user]
+        assert game.started == timezone.datetime(
+            2007, 7, 7, 7, 7, 7, 7, tzinfo=pytz.utc
+        )
+        assert game.finished == timezone.datetime(
+            2007, 7, 7, 7, 12, 7, 7, tzinfo=pytz.utc
+        )
