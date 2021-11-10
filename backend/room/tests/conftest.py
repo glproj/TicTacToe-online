@@ -10,10 +10,16 @@ User = get_user_model()
 @pytest.fixture(scope="function")
 def create_users_and_tokens(django_db_setup, django_db_blocker):
     with django_db_blocker.unblock():
-        anonymous = User.objects.create_user(
-            email="anonymous@anonymous.com",
-            username="anonymous",
+        User.objects.create_user(
+            email="anonymous1@anonymous.com",
+            username="anonymous1",
             password="v157894375n87189437r89ieuwionrc¨#&*¨*@!(*&#",
+            is_active=True,
+        )
+        User.objects.create_user(
+            email="anonymous2@anonymous.com",
+            username="anonymous2",
+            password="4MXRU1980YR8XY09%¨%¨%¨%¨%#¨*fdskaflajfkdsla",
             is_active=True,
         )
         example1 = User.objects.create_user(
