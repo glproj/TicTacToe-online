@@ -25,9 +25,12 @@ class RoomConsumer(JsonWebsocketConsumer):
         self.room_group_name = "game_" + self.room_name
         try:
             room = Room.objects.get(name=self.room_name)
+            self.player = 2
             room.nb_of_players += 1
         except Room.DoesNotExist:
             room = Room.objects.create(name=self.room_name, nb_of_players=1)
+            self.player = 1
+
         player_number = room.nb_of_players
         if player_number == 3:
             self.close("room_full")
@@ -70,7 +73,9 @@ class RoomConsumer(JsonWebsocketConsumer):
         except AttributeError:
             self.played = event["position"]
 
-        current_player = 1 if len(self.played) % 2 == 1 else 2
+        current_player = 1 if len(played) % 2 == 1 else 2
+        if self.player != current_player:
+            return self.send_json({'error': 'not your turn'})
         played_by_current_player = ""
         # this block will pick only the moves
         # of the player that made the last move
