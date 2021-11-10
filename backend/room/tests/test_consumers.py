@@ -13,7 +13,8 @@ User = get_user_model()
 class TestRoomConsumer:
     async def simulate_game(self, player1, player2, moves):
         """Simulate a game where player1 starts and returns
-        the message received from both players when the game ends
+        the message received from both players when the game ends.
+        The game lasts 5 minutes.
 
         :param player1: player that goes first
         :type player1: WebsocketsCommunicator
@@ -22,13 +23,17 @@ class TestRoomConsumer:
         :param moves: game moves, like '1234567' (player1 wins in this example)
         :type moves: string
         """
-        playing = player1
-        for position in moves:
-            await playing.send_json_to({"position": position})
-            player1_response = await player1.receive_json_from()
-            player2_response = await player2.receive_json_from()
-            playing = player2 if playing == player1 else player1
-        return player1_response, player2_response
+        game_start = timezone.datetime(2007, 7, 7, 7, 7, 7, 7)
+        with freeze_time(game_start) as frozen_datetime:
+            playing = player1
+            for position in moves:
+                await playing.send_json_to({"position": position})
+                if position == moves[-1]:
+                    frozen_datetime.tick(timezone.timedelta(minutes=5))
+                player1_response = await player1.receive_json_from()
+                player2_response = await player2.receive_json_from()
+                playing = player2 if playing == player1 else player1
+            return player1_response, player2_response
 
     @pytest.mark.asyncio
     async def test_sending_position(self, connect_players):
