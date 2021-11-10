@@ -16,6 +16,7 @@ psycopg2 = "*"
 pytest = "*"
 pytest-django = "*"
 pytest-asyncio = "*"
+freezegun = "*"
 
 [dev-packages]
 black = "*"
